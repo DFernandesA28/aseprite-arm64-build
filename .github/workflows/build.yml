@@ -41,15 +41,11 @@ jobs:
           cd aseprite
           mkdir build
           cd build
-          export CC=clang
-          export CXX=clang++
           cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DLAF_BACKEND=skia \
             -DSKIA_DIR=$GITHUB_WORKSPACE/skia \
             -DSKIA_LIBRARY_DIR=$GITHUB_WORKSPACE/skia/out/Release-arm64 \
             -DSKIA_LIBRARY=$GITHUB_WORKSPACE/skia/out/Release-arm64/libskia.a \
-            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
-            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
             -G Ninja ..
           ninja -j4 aseprite
 
