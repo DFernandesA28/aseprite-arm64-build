@@ -1,0 +1,60 @@
+name: Build Aseprite ARM64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ clang libc++-dev libc++abi-dev cmake ninja-build \
+            libx11-dev libxcursor-dev libxi-dev libgl1-mesa-dev libfontconfig1-dev \
+            git curl python3
+
+      - name: Clone Aseprite
+        run: |
+          git clone --recursive --depth 1 https://github.com/aseprite/aseprite.git
+          cd aseprite
+          echo "SKIA_BRANCH=aseprite-m122" >> $GITHUB_ENV
+
+      - name: Cache Skia build
+        id: skia-cache
+        uses: actions/cache@v4
+        with:
+          path: skia
+          key: skia-arm64-m122-${{ hashFiles('.github/workflows/build.yml') }}
+
+      - name: Clone and build Skia
+        if: steps.skia-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone -b aseprite-m122 --depth 1 https://github.com/aseprite/skia.git skia
+          cd skia
+          python3 tools/git-sync-deps || true
+          bin/gn gen out/Release-arm64 --args="is_debug=false is_official_build=true skia_use_system_expat=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false skia_use_sfntly=false skia_use_freetype=true skia_use_harfbuzz=true skia_pdf_subset_harfbuzz=true skia_use_system_freetype2=false skia_use_system_harfbuzz=false skia_enable_tools=false skia_enable_pdf=false skia_enable_skottie=false skia_enable_svg=false skia_enable_ganesh=false skia_use_gl=false skia_use_vulkan=false skia_enable_fontmgr_fontconfig=true target_cpu=\"arm64\""
+          ninja -j4 -C out/Release-arm64 skia
+
+      - name: Build Aseprite
+        run: |
+          cd aseprite
+          mkdir build
+          cd build
+          export CC=clang
+          export CXX=clang++
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DLAF_BACKEND=skia \
+            -DSKIA_DIR=$GITHUB_WORKSPACE/skia \
+            -DSKIA_LIBRARY_DIR=$GITHUB_WORKSPACE/skia/out/Release-arm64 \
+            -DSKIA_LIBRARY=$GITHUB_WORKSPACE/skia/out/Release-arm64/libskia.a \
+            -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+            -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
+            -G Ninja ..
+          ninja -j4 aseprite
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aseprite-arm64
+          path: aseprite/build/bin/
