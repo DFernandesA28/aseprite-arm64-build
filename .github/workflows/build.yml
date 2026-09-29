@@ -33,7 +33,7 @@ jobs:
           git clone -b aseprite-m122 https://github.com/aseprite/skia.git skia
           cd skia
           python3 tools/git-sync-deps --verbose
-          bin/gn gen out/Release-arm64 --args="is_debug=false is_official_build=true skia_use_system_expat=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=true skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false skia_use_sfntly=false skia_use_freetype=true skia_use_harfbuzz=true skia_pdf_subset_harfbuzz=true skia_use_system_freetype2=false skia_use_system_harfbuzz=false skia_enable_tools=false skia_enable_pdf=false skia_enable_skottie=false skia_enable_svg=false target_cpu=\"arm64\""
+          bin/gn gen out/Release-arm64 --args="is_debug=false is_official_build=true skia_use_system_expat=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false skia_use_sfntly=false skia_use_freetype=true skia_use_harfbuzz=true skia_pdf_subset_harfbuzz=true skia_use_system_freetype2=false skia_use_system_harfbuzz=false skia_enable_tools=false skia_enable_pdf=false skia_enable_skottie=false skia_enable_svg=false target_cpu=\"arm64\""
           ninja -j4 -C out/Release-arm64 skia skshaper skunicode
 
       - name: Build Aseprite
@@ -46,6 +46,7 @@ jobs:
             -DSKIA_DIR=$GITHUB_WORKSPACE/skia \
             -DSKIA_LIBRARY_DIR=$GITHUB_WORKSPACE/skia/out/Release-arm64 \
             -DSKIA_LIBRARY=$GITHUB_WORKSPACE/skia/out/Release-arm64/libskia.a \
+            -DLIBJPEG_TURBO_LIBRARY=/usr/lib/aarch64-linux-gnu/libjpeg.so \
             -G Ninja ..
           ninja -j4 aseprite
 
